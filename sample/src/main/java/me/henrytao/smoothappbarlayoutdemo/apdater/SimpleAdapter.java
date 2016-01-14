@@ -16,6 +16,11 @@
 
 package me.henrytao.smoothappbarlayoutdemo.apdater;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
+import android.annotation.TargetApi;
+import android.os.Build;
 import android.support.annotation.LayoutRes;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -23,6 +28,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import butterknife.Bind;
@@ -34,18 +40,42 @@ import me.henrytao.smoothappbarlayoutdemo.R;
  */
 public class SimpleAdapter<T> extends RecyclerView.Adapter<SimpleAdapter.ViewHolder> {
 
-  private final List<T> mData;
+  private static final boolean ENABLE_ANIMATION = true;
+
+  private static final boolean ENABLE_CACHED_STATE = true;
+  // If true, the adapter data knows whether views are extended or not. If false we just take current state of view in viewholder (so reused views are like in 'wrong' state)
+
+  static class DecoratedData<T> {
+
+    final T data;
+
+    boolean extended;
+
+    public DecoratedData(final T data) {
+      this.data = data;
+    }
+
+    @Override
+    public String toString() {
+      return data.toString();
+    }
+  }
+
+  private final List<DecoratedData<T>> mDataList;
 
   private final OnItemClickListener mOnItemClickListener;
 
   public SimpleAdapter(List<T> data, OnItemClickListener<T> onItemClickListener) {
-    mData = data;
+    mDataList = new ArrayList<>(data.size());
+    for (int i = 0; i < data.size(); i++) {
+      mDataList.add(new DecoratedData<>(data.get(i)));
+    }
     mOnItemClickListener = onItemClickListener;
   }
 
   @Override
   public int getItemCount() {
-    return mData != null ? mData.size() : 0;
+    return mDataList != null ? mDataList.size() : 0;
   }
 
   @Override
@@ -58,8 +88,8 @@ public class SimpleAdapter<T> extends RecyclerView.Adapter<SimpleAdapter.ViewHol
     return new ViewHolder(LayoutInflater.from(parent.getContext()), parent, mOnItemClickListener);
   }
 
-  public T getItem(int position) {
-    return mData != null && position >= 0 && position < mData.size() ? mData.get(position) : null;
+  public DecoratedData<T> getItem(int position) {
+    return mDataList != null && position >= 0 && position < mDataList.size() ? mDataList.get(position) : null;
   }
 
   public interface OnItemClickListener<I> {
@@ -76,7 +106,10 @@ public class SimpleAdapter<T> extends RecyclerView.Adapter<SimpleAdapter.ViewHol
     @Bind(R.id.title)
     TextView vTitle;
 
-    private Object mData;
+    @Bind(R.id.huge_sub_text)
+    TextView vHuge;
+
+    private DecoratedData mData;
 
     public ViewHolder(LayoutInflater inflater, ViewGroup parent, final OnItemClickListener onItemClickListener) {
       super(createView(inflater, parent, R.layout.item_simple));
@@ -85,15 +118,67 @@ public class SimpleAdapter<T> extends RecyclerView.Adapter<SimpleAdapter.ViewHol
         @Override
         public void onClick(View v) {
           if (onItemClickListener != null) {
-            onItemClickListener.onItemClick(mData);
+            onItemClickListener.onItemClick(mData.data);
           }
+          // reproduce bug
+          // open 1
+          // scroll down find open, close it
+          // scrolling up will now be wrong. Of cause problem that it remembers bad view state below, but seems likely to be cause of problem
+          mData.extended = ENABLE_CACHED_STATE ? !mData.extended : vHuge.getVisibility() != View.VISIBLE;
+          if (ENABLE_ANIMATION) {
+            vHuge.setVisibility(View.VISIBLE);
+            if (mData.extended) {
+              animateView(0, 3000, vHuge, false);
+            } else {
+              animateView(3000, 0, vHuge, true);
+            }
+          } else { // skip animation low api's.
+            vHuge.setVisibility(mData.extended ? View.VISIBLE : View.GONE);
+            vHuge.requestLayout();
+          }
+          System.out.println("clicked " + mData);
         }
       });
     }
 
-    public void bind(Object data) {
+    private void animateView(float startHeight, float endHeight, final View animatedView, final boolean hideAfter) {
+      ValueAnimator mover = ValueAnimator.ofFloat(startHeight, endHeight);
+      mover.setDuration(400);
+      mover.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+        @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+        @Override
+        public void onAnimationUpdate(final ValueAnimator animation) {
+          float value = ((Float) animation.getAnimatedValue()).floatValue();
+          animatedView.getLayoutParams().height = (int) value;
+          animatedView.requestLayout();
+        }
+      });
+      mover.addListener(new AnimatorListenerAdapter() {
+        @Override
+        public void onAnimationEnd(final Animator animation) {
+          if (hideAfter) {
+            vHuge.setVisibility(View.GONE);
+          }
+          animatedView.getLayoutParams().height = ViewGroup.LayoutParams.WRAP_CONTENT;
+          animatedView.requestLayout();
+        }
+      });
+
+      mover.start();
+    }
+
+    public void bind(DecoratedData data) {
       mData = data;
       vTitle.setText(data.toString());
+      String hugeText = "";
+      for (int i = 0; i < 60; i++) {
+        hugeText += data.toString() + " HUGE\n";
+      }
+      vHuge.setText(hugeText);
+      if (ENABLE_CACHED_STATE) {
+        vHuge.setVisibility(mData.extended ? View.VISIBLE : View.GONE);
+        itemView.requestLayout();
+      }
     }
   }
 }

@@ -14,17 +14,26 @@
   ~ limitations under the License.
   -->
 
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-  xmlns:tools="http://schemas.android.com/tools"
-  android:background="@drawable/md_ripple"
-  android:clickable="true"
-  style="@style/MdList.SingleLine.TextOnly">
+<RelativeLayout style="@style/MdList.SingleLine.TextOnly"
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:background="@drawable/md_ripple"
+                android:clickable="true">
 
-  <TextView
-    android:id="@+id/title"
-    android:singleLine="false"
-    tools:text="Sample"
-    style="@style/MdList.SingleLine.TextOnly.Text" />
+    <TextView
+        android:id="@+id/title"
+        style="@style/MdList.SingleLine.TextOnly.Text"
+        android:singleLine="false"
+        tools:text="Sample"/>
 
-  <View style="@style/MdDivider.AlignParentBottom" />
+    <TextView
+        android:id="@+id/huge_sub_text"
+        style="@style/MdList.SingleLine.TextOnly.Text"
+        android:background="@android:color/darker_gray"
+        android:layout_below="@id/title"
+        android:singleLine="false"
+        tools:text="HUUGGEEEE FOOBAR will be overwritten programmatically"
+        android:visibility="gone"/>
+
+    <View style="@style/MdDivider.AlignParentBottom"/>
 </RelativeLayout>
