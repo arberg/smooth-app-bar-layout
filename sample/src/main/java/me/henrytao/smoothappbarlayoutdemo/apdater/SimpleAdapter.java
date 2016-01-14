@@ -97,7 +97,7 @@ public class SimpleAdapter<T> extends RecyclerView.Adapter<SimpleAdapter.ViewHol
     void onItemClick(I data);
   }
 
-  public static class ViewHolder extends RecyclerView.ViewHolder {
+  public static class ViewHolder<T> extends RecyclerView.ViewHolder {
 
     private static View createView(LayoutInflater inflater, ViewGroup parent, @LayoutRes int layoutId) {
       return inflater.inflate(layoutId, parent, false);
@@ -109,34 +109,36 @@ public class SimpleAdapter<T> extends RecyclerView.Adapter<SimpleAdapter.ViewHol
     @Bind(R.id.huge_sub_text)
     TextView vHuge;
 
-    private DecoratedData mData;
+    private DecoratedData<T> mData;
 
-    public ViewHolder(LayoutInflater inflater, ViewGroup parent, final OnItemClickListener onItemClickListener) {
+    public ViewHolder(LayoutInflater inflater, ViewGroup parent, final OnItemClickListener<T> onItemClickListener) {
       super(createView(inflater, parent, R.layout.item_simple));
       ButterKnife.bind(this, itemView);
       itemView.setOnClickListener(new View.OnClickListener() {
         @Override
         public void onClick(View v) {
           if (onItemClickListener != null) {
+            // In this sample this means it the main page, so skip below test code
             onItemClickListener.onItemClick(mData.data);
-          }
-          // reproduce bug
-          // open 1
-          // scroll down find open, close it
-          // scrolling up will now be wrong. Of cause problem that it remembers bad view state below, but seems likely to be cause of problem
-          mData.extended = ENABLE_CACHED_STATE ? !mData.extended : vHuge.getVisibility() != View.VISIBLE;
-          if (ENABLE_ANIMATION) {
-            vHuge.setVisibility(View.VISIBLE);
-            if (mData.extended) {
-              animateView(0, 3000, vHuge, false);
-            } else {
-              animateView(3000, 0, vHuge, true);
+          } else {
+            // reproduce bug
+            // open 1
+            // scroll down find open, close it
+            // scrolling up will now be wrong. Of cause problem that it remembers bad view state below, but seems likely to be cause of problem
+            mData.extended = ENABLE_CACHED_STATE ? !mData.extended : vHuge.getVisibility() != View.VISIBLE;
+            if (ENABLE_ANIMATION) {
+              vHuge.setVisibility(View.VISIBLE);
+              if (mData.extended) {
+                animateView(0, 3000, vHuge, false);
+              } else {
+                animateView(3000, 0, vHuge, true);
+              }
+            } else { // skip animation low api's.
+              vHuge.setVisibility(mData.extended ? View.VISIBLE : View.GONE);
+              vHuge.requestLayout();
             }
-          } else { // skip animation low api's.
-            vHuge.setVisibility(mData.extended ? View.VISIBLE : View.GONE);
-            vHuge.requestLayout();
+            System.out.println("clicked " + mData);
           }
-          System.out.println("clicked " + mData);
         }
       });
     }
@@ -148,7 +150,7 @@ public class SimpleAdapter<T> extends RecyclerView.Adapter<SimpleAdapter.ViewHol
         @TargetApi(Build.VERSION_CODES.HONEYCOMB)
         @Override
         public void onAnimationUpdate(final ValueAnimator animation) {
-          float value = ((Float) animation.getAnimatedValue()).floatValue();
+          float value = (Float) animation.getAnimatedValue();
           animatedView.getLayoutParams().height = (int) value;
           animatedView.requestLayout();
         }
