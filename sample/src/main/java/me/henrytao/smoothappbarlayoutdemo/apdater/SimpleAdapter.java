@@ -117,27 +117,27 @@ public class SimpleAdapter<T> extends RecyclerView.Adapter<SimpleAdapter.ViewHol
       itemView.setOnClickListener(new View.OnClickListener() {
         @Override
         public void onClick(View v) {
+          // reproduce bug
+          // open 1
+          // scroll down find open, close it
+          // scrolling up will now be wrong. Of cause problem that it remembers bad view state below, but seems likely to be cause of problem
+          mData.extended = ENABLE_CACHED_STATE ? !mData.extended : vHuge.getVisibility() != View.VISIBLE;
+          if (ENABLE_ANIMATION) {
+            vHuge.setVisibility(View.VISIBLE);
+            if (mData.extended) {
+              animateView(0, 3000, vHuge, false);
+            } else {
+              animateView(3000, 0, vHuge, true);
+            }
+          } else { // skip animation low api's.
+            vHuge.setVisibility(mData.extended ? View.VISIBLE : View.GONE);
+            vHuge.requestLayout();
+          }
+          System.out.println("clicked " + mData);
+
           if (onItemClickListener != null) {
             // In this sample this means it the main page, so skip below test code
             onItemClickListener.onItemClick(mData.data);
-          } else {
-            // reproduce bug
-            // open 1
-            // scroll down find open, close it
-            // scrolling up will now be wrong. Of cause problem that it remembers bad view state below, but seems likely to be cause of problem
-            mData.extended = ENABLE_CACHED_STATE ? !mData.extended : vHuge.getVisibility() != View.VISIBLE;
-            if (ENABLE_ANIMATION) {
-              vHuge.setVisibility(View.VISIBLE);
-              if (mData.extended) {
-                animateView(0, 3000, vHuge, false);
-              } else {
-                animateView(3000, 0, vHuge, true);
-              }
-            } else { // skip animation low api's.
-              vHuge.setVisibility(mData.extended ? View.VISIBLE : View.GONE);
-              vHuge.requestLayout();
-            }
-            System.out.println("clicked " + mData);
           }
         }
       });
