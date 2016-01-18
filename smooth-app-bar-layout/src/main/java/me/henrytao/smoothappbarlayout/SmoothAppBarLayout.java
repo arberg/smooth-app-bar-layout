@@ -26,6 +26,7 @@ import android.support.v4.view.ViewPager;
 import android.support.v4.widget.NestedScrollView;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Interpolator;
@@ -149,6 +150,7 @@ public class SmoothAppBarLayout extends AppBarLayout {
   }
 
   public void syncOffset() {
+    Log.i("SMOOTH", "SmoothAppBarLayout.this.syncOffset");
     int i = 0;
     for (int z = mOffsetSyncedListeners.size(); i < z; ++i) {
       WeakReference ref = (WeakReference) mOffsetSyncedListeners.get(i);

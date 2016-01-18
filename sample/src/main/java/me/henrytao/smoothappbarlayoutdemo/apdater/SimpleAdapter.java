@@ -23,6 +23,7 @@ import android.annotation.TargetApi;
 import android.os.Build;
 import android.support.annotation.LayoutRes;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -43,7 +44,7 @@ public class SimpleAdapter<T> extends RecyclerView.Adapter<SimpleAdapter.ViewHol
   private static final boolean ENABLE_ANIMATION = true;
 
   private static final boolean ENABLE_CACHED_STATE = true;
-  // If true, the adapter data knows whether views are extended or not. If false we just take current state of view in viewholder (so reused views are like in 'wrong' state)
+    // If true, the adapter data knows whether views are extended or not. If false we just take current state of view in viewholder (so reused views are like in 'wrong' state)
 
   static class DecoratedData<T> {
 
@@ -66,11 +67,11 @@ public class SimpleAdapter<T> extends RecyclerView.Adapter<SimpleAdapter.ViewHol
   private final OnItemClickListener mOnItemClickListener;
 
   public SimpleAdapter(List<T> data, OnItemClickListener<T> onItemClickListener) {
-    mDataList = new ArrayList<>(data.size());
-    for (int i = 0; i < data.size(); i++) {
-      mDataList.add(new DecoratedData<>(data.get(i)));
-    }
-    mOnItemClickListener = onItemClickListener;
+      mDataList = new ArrayList<>(data.size());
+      for (int i = 0; i < data.size(); i++) {
+          mDataList.add(new DecoratedData<>(data.get(i)));
+      }
+      mOnItemClickListener = onItemClickListener;
   }
 
   @Override
@@ -163,6 +164,7 @@ public class SimpleAdapter<T> extends RecyclerView.Adapter<SimpleAdapter.ViewHol
           }
           animatedView.getLayoutParams().height = ViewGroup.LayoutParams.WRAP_CONTENT;
           animatedView.requestLayout();
+          Log.i("SMOOTH", "Animation Done");
         }
       });
 
