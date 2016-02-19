@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 "Henry Tao <hi@henrytao.me>"
+ * Copyright 2016 "Henry Tao <hi@henrytao.me>"
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,38 +16,95 @@
 
 package me.henrytao.smoothappbarlayoutdemo.apdater;
 
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.widget.NestedScrollView;
-import android.support.v7.widget.RecyclerView;
-import android.view.View;
+import android.support.v4.app.FragmentPagerAdapter;
+import android.text.TextUtils;
+import android.view.ViewGroup;
 
-import me.henrytao.smoothappbarlayout.PagerAdapter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import me.henrytao.smoothappbarlayout.base.ObservableFragment;
+import me.henrytao.smoothappbarlayout.base.ObservablePagerAdapter;
 
 /**
- * Created by henrytao on 10/3/15.
+ * Created by henrytao on 2/6/16.
  */
-public class ViewPagerAdapter extends BaseViewPagerAdapter implements PagerAdapter.OnSyncOffset {
+public class ViewPagerAdapter extends FragmentPagerAdapter implements ObservablePagerAdapter {
+
+  private static String makeTagName(int position) {
+    return ViewPagerAdapter.class.getName() + ":" + position;
+  }
+
+  private final FragmentManager mFragmentManager;
+
+  private final List<Fragment> mFragments = new ArrayList<>();
+
+  private final Map<Integer, String> mTags = new HashMap<>();
+
+  private final List<CharSequence> mTitles = new ArrayList<>();
+
+  private Bundle mSavedInstanceState = new Bundle();
 
   public ViewPagerAdapter(FragmentManager fm) {
     super(fm);
+    mFragmentManager = fm;
   }
 
   @Override
-  public int onSyncOffset(int position, final int offset) {
-    final View scrollView = getScrollView(position);
+  public int getCount() {
+    return mFragments.size();
+  }
 
-    if (scrollView instanceof RecyclerView) {
-      int dy = offset - ((RecyclerView) scrollView).computeVerticalScrollOffset();
-      if (offset == 0) {
-        ((RecyclerView) scrollView).scrollToPosition(0);
-      } else if (dy != 0) {
-        scrollView.scrollBy(0, dy);
-      }
-    } else if (scrollView instanceof NestedScrollView) {
-      if (offset != scrollView.getScrollY()) {
-        scrollView.scrollTo(0, offset);
-      }
+  @Override
+  public Fragment getItem(int position) {
+    String tagName = mSavedInstanceState.getString(makeTagName(position));
+    if (!TextUtils.isEmpty(tagName)) {
+      Fragment fragment = mFragmentManager.findFragmentByTag(tagName);
+      return fragment != null ? fragment : mFragments.get(position);
     }
-    return FAKE_DELAY;
+    return mFragments.get(position);
+  }
+
+  @Override
+  public ObservableFragment getObservableFragment(int position) {
+    if (getItem(position) instanceof ObservableFragment) {
+      return (ObservableFragment) getItem(position);
+    }
+    return null;
+  }
+
+  @Override
+  public CharSequence getPageTitle(int position) {
+    return mTitles.get(position);
+  }
+
+  @Override
+  public Object instantiateItem(ViewGroup container, int position) {
+    Object object = super.instantiateItem(container, position);
+    mTags.put(position, ((Fragment) object).getTag());
+    return object;
+  }
+
+  public void addFragment(CharSequence title, Fragment fragment) {
+    mTitles.add(title);
+    mFragments.add(fragment);
+  }
+
+  public void onRestoreInstanceState(Bundle savedInstanceState) {
+    mSavedInstanceState = savedInstanceState != null ? savedInstanceState : new Bundle();
+  }
+
+  public void onSaveInstanceState(Bundle outState) {
+    Iterator<Map.Entry<Integer, String>> iterator = mTags.entrySet().iterator();
+    while (iterator.hasNext()) {
+      Map.Entry<Integer, String> entry = iterator.next();
+      outState.putString(makeTagName(entry.getKey()), entry.getValue());
+    }
   }
 }
